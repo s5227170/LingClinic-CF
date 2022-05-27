@@ -1,0 +1,29 @@
+{
+  "name": "final-year-project-cf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx functions-framework --target=healthcares"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.0.0",
+    "@google-cloud/storage": "^5.18.3",
+    "busboy": "^1.5.0",
+    "cors": "^2.8.5",
+    "dotenv-flow": "^3.2.0",
+    "express": "^4.17.3",
+    "express-multipart-file-parser": "^0.1.2",
+    "filereader": "^0.10.3",
+    "firebase-admin": "^10.0.2",
+    "mongodb": "^4.4.1",
+    "multer": "^1.4.4",
+    "uuid": "^8.3.2",
+    "validator": "^13.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
