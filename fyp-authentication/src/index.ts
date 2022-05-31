@@ -1,14 +1,8 @@
 import cors from "cors";
-import express, {
-  Application,
-  NextFunction,
-  Request,
-  Response,
-} from "express";
+import express, { Application, NextFunction, Request, Response } from "express";
 import CustomError from "./models/CustomError";
-import getUser from "./routes/getuser";
-import createUser from "./routes/createuser";
 import decodeToken from "./middleware/decoder";
+import authentication from "./routes/index";
 
 const fileMiddleware = require("express-multipart-file-parser");
 
@@ -34,9 +28,7 @@ app.use(fileMiddleware);
 
 app.use(decodeToken);
 
-app.use("/createuser", createUser);
-
-app.use("/getuser", getUser);
+app.use("/", authentication);
 
 app.use(
   (error: CustomError, req: Request, res: Response, next: NextFunction) => {
@@ -51,5 +43,3 @@ app.use(
 app.listen(3001);
 
 export const users = app;
-
-// exports.users = app;

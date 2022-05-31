@@ -10,6 +10,7 @@ node_modules/*
 
 # production
 /build
+ts-built
 
 # misc
 .DS_Store
