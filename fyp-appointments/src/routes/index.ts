@@ -6,7 +6,6 @@ import {
   Healthcare,
   RehabilitatorAppointment,
   TherapistAppointment,
-  User,
 } from "../types";
 import dateInPast from "../util/dateInPast";
 
@@ -73,6 +72,11 @@ appointmentRoutes.post(
       await client.connect("FYP", "Users")
     ).findOne({ _id: res.locals.uid });
 
+    if (!user) {
+      const error = new CustomError("Problem findings account's user");
+      error.status = 404;
+      return next(error);
+    }
     const clientUserName = user.forename + " " + user.surname;
     const professionalUserName =
       professional.forename + " " + professional.surname;
@@ -139,9 +143,9 @@ appointmentRoutes.post(
       date: new Date(),
     };
 
-    const bookedAppointment = (
+    const bookedAppointment = await (
       await client.connect("FYP", "AppointmentsTherapists")
-    ).insertOne({ ...appointment });
+    ).insertOne({ ...appointment, _id: appointment._id as ObjectId });
 
     res.status(200).send(bookedAppointment);
     return next();
@@ -216,6 +220,11 @@ appointmentRoutes.post(
       await client.connect("FYP", "Healthcares")
     ).findOne({ _id: new ObjectId(req.body.healthcareID) });
 
+    if (!healthcare) {
+      const error = new CustomError("Problem finding healthcare");
+      error.status = 404;
+      return next(error);
+    }
     if (healthcare.appointmentsRehabRequired != req.body.items.length) {
       const error = new CustomError(
         "Submitted amount of appointments is not equal to the required."
@@ -243,7 +252,7 @@ appointmentRoutes.post(
         }
       });
       if (takenAppointments.length == 0) {
-        req.body.items.map(async (item, index) => {
+        req.body.items.map(async (item: any, index: number) => {
           req.body.items[index] = {
             ...item,
             professional: rehabilitatorName,
@@ -269,23 +278,31 @@ appointmentRoutes.post(
         res.status(200).send(appointmentsToHealthcare);
         return next();
       } else {
-        req.body.items.map((item, index) => {
-          req.body.items[index] = {
-            ...item,
-            professional: rehabilitatorName,
-          };
-        });
-        const appointmentsToHealthcare = await (
-          await client.connect("FYP", "Healthcares")
-        ).updateOne(
-          { _id: new ObjectId(req.body.healthcareID) },
-          { $set: { appointmentsRehabilitator: req.body.items } }
+        const error = new CustomError(
+          "Somebody already booked one or more of the desired slots. Please refresh the scheduler and try booking again."
         );
-
-        res.status(200).send(appointmentsToHealthcare);
-        return next();
+        error.status = 424;
+        return next(error);
       }
+    } else {
+      req.body.items.map((item: any, index: number) => {
+        req.body.items[index] = {
+          ...item,
+          professional: rehabilitatorName,
+        };
+      });
+      const appointmentsToHealthcare = await (
+        await client.connect("FYP", "Healthcares")
+      ).updateOne(
+        { _id: new ObjectId(req.body.healthcareID) },
+        { $set: { appointmentsRehabilitator: req.body.items } }
+      );
+
+      res.status(200).send(appointmentsToHealthcare);
+      return next();
     }
+
+    return next();
   }
 );
 
@@ -306,7 +323,7 @@ appointmentRoutes.get(
     }
 
     const client = new MongoConnection();
-    client.init();
+    await client.init();
 
     if (client.error) {
       return next(client.error);
@@ -323,9 +340,8 @@ appointmentRoutes.get(
       return next();
     }
 
-    const error = new CustomError("No appointment found");
-    error.status = 404;
-    return next(error);
+    res.status(204).send();
+    return next();
   }
 );
 
@@ -346,7 +362,7 @@ appointmentRoutes.delete(
     }
 
     const client = new MongoConnection();
-    client.init();
+    await client.init();
 
     if (client.error) {
       return next(client.error);
@@ -369,6 +385,12 @@ appointmentRoutes.delete(
       await client.connect("FYP", "Users")
     ).findOne({ _id: res.locals.uid });
 
+    if (!user) {
+      const error = new CustomError("Problem findings account's user");
+      error.status = 404;
+      return next(error);
+    }
+
     const userName = user.forename + " " + user.surname;
 
     if (appointment.client == userName) {
@@ -388,248 +410,228 @@ appointmentRoutes.delete(
   }
 );
 
-// appointmentRoutes.post(
-//   "/acceptappointmenttherapist",
-//   async (req, res, next) => {
-//     const errors = [];
+appointmentRoutes.post(
+  "/acceptappointmenttherapist",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors: string[] = [];
 
-//     if (validator.isEmpty(req.body.appointmentID)) {
-//       errors.push({ message: "No appointment ID provided." });
-//     }
+    if (validator.isEmpty(req.body.appointmentID)) {
+      errors.push("No appointment ID provided.");
+    }
 
-//     if (errors.length > 0) {
-//       const error = new Error("Invalid input");
-//       error.data = errors;
-//       error.code = 422;
-//       res.status(422).send({ error: errors });
-//       return next();
-//     }
+    if (errors.length > 0) {
+      const error = new CustomError("Invalid input");
+      error.data = errors;
+      error.status = 422;
+      return next(error);
+    }
 
-//     MongoClient.connect(
-//       process.env.DB_URL,
-//       {
-//         useNewUrlParser: true,
-//         useUnifiedTopology: true,
-//       },
-//       async (err, client) => {
-//         if (err) {
-//           const error = new Error("Failed connection");
-//           error.code = 500;
-//           return next(error);
-//         }
+    const client = new MongoConnection();
+    await client.init();
 
-//         const target = await client
-//           .db("FYP")
-//           .collection("AppointmentsTherapists")
-//           .updateOne(
-//             { _id: new mongodb.ObjectId(req.body.appointmentID) },
-//             { $set: { status: "Set" } }
-//           );
+    if (client.error) {
+      return next(client.error);
+    }
 
-//         await client
-//           .db("FYP")
-//           .collection("AppointmentsTherapists")
-//           .find()
-//           .toArray()
-//           .then((data) => {
-//             if (data) {
-//               const appointments = data.map((item) => {
-//                 if (!dateInPast(item.endTime) && item.complete == false) {
-//                   return {
-//                     ...item,
-//                     _id: item._id.toString(),
-//                   };
-//                 }
-//               });
-//               res.status(200).send(appointments.filter((n) => n));
-//               return next();
-//             } else {
-//               res.status(200).send("No appointments found");
-//               return next();
-//             }
-//           });
-//       }
-//     );
-//   }
-// );
+    const target = await (
+      await client.connect("FYP", "AppointmentsTherapists")
+    ).updateOne(
+      { _id: new ObjectId(req.body.appointmentID) },
+      { $set: { status: "Set" } }
+    );
 
-// appointmentRoutes.post(
-//   "/declineappointmenttherapist",
-//   async (req, res, next) => {
-//     const errors = [];
+    const data = await (await client.connect("FYP", "AppointmentsTherapists"))
+      .find()
+      .toArray();
 
-//     if (validator.isEmpty(req.body.appointmentID)) {
-//       errors.push({ message: "No appointment ID provided." });
-//     }
+    if (data) {
+      const appointments = data.map((item) => {
+        if (!dateInPast(item.endTime) && item.complete == false) {
+          return {
+            ...item,
+            _id: item._id.toString(),
+          };
+        }
+      });
+      res.status(200).send(appointments.filter((n) => n));
+      return next();
+    } else {
+      res.status(204).send();
+      return next();
+    }
+  }
+);
 
-//     if (errors.length > 0) {
-//       const error = new Error("Invalid input");
-//       error.data = errors;
-//       error.code = 422;
-//       res.status(422).send({ error: errors });
-//       return next();
-//     }
+appointmentRoutes.post(
+  "/declineappointmenttherapist",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors: string[] = [];
 
-//     MongoClient.connect(
-//       process.env.DB_URL,
-//       {
-//         useNewUrlParser: true,
-//         useUnifiedTopology: true,
-//       },
-//       async (err, client) => {
-//         if (err) {
-//           const error = new Error("Failed connection");
-//           error.code = 500;
-//           return next(error);
-//         }
+    if (validator.isEmpty(req.body.appointmentID)) {
+      errors.push("No appointment ID provided.");
+    }
 
-//         await client
-//           .db("FYP")
-//           .collection("AppointmentsTherapists")
-//           .updateOne(
-//             { _id: new mongodb.ObjectId(req.body.appointmentID) },
-//             { $set: { status: "Declined" } }
-//           );
+    if (errors.length > 0) {
+      const error = new CustomError("Invalid input");
+      error.data = errors;
+      error.status = 422;
+      return next(error);
+    }
 
-//         await client
-//           .db("FYP")
-//           .collection("AppointmentsTherapists")
-//           .find()
-//           .toArray()
-//           .then((data) => {
-//             if (data) {
-//               const appointments = data.map((item) => {
-//                 if (!dateInPast(item.endTime) && item.complete == false) {
-//                   return {
-//                     ...item,
-//                     _id: item._id.toString(),
-//                   };
-//                 }
-//               });
-//               res.status(200).send(appointments.filter((n) => n));
-//               return next();
-//             } else {
-//               res.status(200).send("No appointments found");
-//               return next();
-//             }
-//           });
-//       }
-//     );
-//   }
-// );
+    const client = new MongoConnection();
+    await client.init();
 
-// appointmentRoutes.get("/getappointments", async (req, res, next) => {
-//   MongoClient.connect(
-//     process.env.DB_URL,
-//     {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     },
-//     async (err, client) => {
-//       if (err) {
-//         const error = new Error("Failed connection");
-//         error.code = 500;
-//         return next(error);
-//       }
+    if (client.error) {
+      return next(client.error);
+    }
 
-//       const userCheck = await client
-//         .db("FYP")
-//         .collection("Users")
-//         .findOne({ _id: res.locals.uid });
-//       if (userCheck.type != "Therapist") {
-//         res.status(403).send("Access Denied");
-//         return next();
-//       }
+    const declinedAppointment = await (
+      await client.connect("FYP", "AppointmentsTherapists")
+    ).updateOne(
+      { _id: new ObjectId(req.body.appointmentID) },
+      { $set: { status: "Declined" } }
+    );
 
-//       const userName = userCheck.forename + " " + userCheck.surname;
+    if (declinedAppointment.modifiedCount == 0) {
+      const error = new CustomError("Problem locating the appointment");
+      error.status = 404;
+      return next(error);
+    }
 
-//       await client
-//         .db("FYP")
-//         .collection("AppointmentsTherapists")
-//         .find({ professional: userName })
-//         .toArray()
-//         .then((data) => {
-//           if (data) {
-//             const appointments = data.map((item) => {
-//               if (!dateInPast(item.endTime) && item.complete == false) {
-//                 return {
-//                   ...item,
-//                   _id: item._id.toString(),
-//                 };
-//               }
-//             });
+    const updatedAppointments = await (
+      await client.connect("FYP", "AppointmentsTherapists")
+    )
+      .find()
+      .toArray();
 
-//             res.status(200).send(appointments.filter((n) => n));
-//             return next();
-//           } else {
-//             res.status(404).send("No appointments found");
-//             return next();
-//           }
-//         });
-//     }
-//   );
-// });
+    if (updatedAppointments) {
+      const appointments = updatedAppointments.map((item) => {
+        if (!dateInPast(item.endTime) && item.complete == false) {
+          return {
+            ...item,
+            _id: item._id.toString(),
+          };
+        }
+      });
+      res.status(200).send(appointments.filter((n) => n));
+      return next();
+    } else {
+      res.status(204).send();
+      return next();
+    }
+  }
+);
 
-// appointmentRoutes.get("/getpersonalactivity", async (req, res, next) => {
-//   MongoClient.connect(
-//     process.env.DB_URL,
-//     {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     },
-//     async (err, client) => {
-//       if (err) {
-//         const error = new Error("Failed connection");
-//         error.code = 500;
-//         return next(error);
-//       }
+appointmentRoutes.get(
+  "/getappointments",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const client = new MongoConnection();
+    await client.init();
 
-//       let allData = [];
+    if (client.error) {
+      return next(client.error);
+    }
 
-//       const userCheck = await client
-//         .db("FYP")
-//         .collection("Users")
-//         .findOne({ _id: res.locals.uid });
-//       const userName = userCheck.forename + " " + userCheck.surname;
+    const userCheck = await (
+      await client.connect("FYP", "Users")
+    ).findOne({ _id: res.locals.uid });
 
-//       await client
-//         .db("FYP")
-//         .collection("AppointmentsTherapists")
-//         .find({ client: userName, complete: false })
-//         .toArray()
-//         .then((data) => {
-//           if (data) {
-//             data.map((item) => {
-//               allData.push({
-//                 ...item,
-//                 _id: item._id.toString(),
-//                 type: "appointment",
-//               });
-//             });
-//           }
-//         });
+    if (!userCheck) {
+      const error = new CustomError("Problem findings account's user");
+      error.status = 404;
+      return next(error);
+    }
 
-//       await client
-//         .db("FYP")
-//         .collection("Healthcares")
-//         .find({ client: userName })
-//         .toArray()
-//         .then((data) => {
-//           if (data) {
-//             data.map((item) => {
-//               allData.push({
-//                 ...item,
-//                 _id: item._id.toString(),
-//                 type: "healthcare",
-//               });
-//             });
-//           }
-//         });
+    if (userCheck.type != "Therapist") {
+      const error = new CustomError("Access Denied");
+      error.status = 403;
+      return next(error);
+    }
 
-//       res.status(200).send(allData);
-//       return next();
-//     }
-//   );
-// });
+    const userName = userCheck.forename + " " + userCheck.surname;
+
+    const appointments = await (
+      await client.connect("FYP", "AppointmentsTherapists")
+    )
+      .find()
+      .toArray();
+
+    if (appointments) {
+      const refinedAppointments = appointments.map((item) => {
+        if (!dateInPast(item.endTime) && item.complete == false) {
+          return {
+            ...item,
+            _id: item._id.toString(),
+          };
+        }
+      });
+
+      res.status(200).send(refinedAppointments.filter((n) => n));
+      return next();
+    } else {
+      res.status(204).send();
+      return next();
+    }
+  }
+);
+
+appointmentRoutes.get(
+  "/getpersonalactivity",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const client = new MongoConnection();
+    await client.init();
+
+    if (client.error) {
+      return next(client.error);
+    }
+
+    let allData: (Healthcare | TherapistAppointment)[] = [];
+
+    const userCheck = await (
+      await client.connect("FYP", "Users")
+    ).findOne({ _id: res.locals.uid });
+
+    if (!userCheck) {
+      const error = new CustomError("Problem findings account's user");
+      error.status = 404;
+      return next(error);
+    }
+
+    const userName = userCheck.forename + " " + userCheck.surname;
+
+    const therapistAppointments: object[] = await (
+      await client.connect("FYP", "AppointmentsTherapists")
+    )
+      .find({ client: userName, complete: false })
+      .toArray();
+
+    if (therapistAppointments) {
+      therapistAppointments.map((item: any) => {
+        allData.push({
+          ...item,
+          _id: item._id.toString(),
+          type: "appointment",
+        });
+      });
+    }
+
+    const healthcares = await (await client.connect("FYP", "Healthcares"))
+      .find({ client: userName })
+      .toArray();
+
+    if (healthcares) {
+      healthcares.map((item: any) => {
+        allData.push({
+          ...item,
+          _id: item._id.toString(),
+          type: "healthcare",
+        });
+      });
+    }
+
+    res.status(200).send(allData);
+    return next();
+  }
+);
 
 export default appointmentRoutes;

@@ -37,6 +37,7 @@ app.use(
       message: error.message,
       data: error.data,
     });
+    return next();
   }
 );
 

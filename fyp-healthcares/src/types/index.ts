@@ -1,7 +1,7 @@
-import { ObjectId, WithId } from "mongodb";
+import { ObjectId } from "mongodb";
 
 export interface TherapistAppointment {
-  _id: ObjectId | string;
+  _id: ObjectId;
   client: string;
   professional: string;
   information: string;
@@ -12,16 +12,22 @@ export interface TherapistAppointment {
   date: Date;
 }
 
-export interface RehabilitatorAppointment {
-  _id: ObjectId | string;
+export interface TherapistAppointmentReturn {
+  _id: string;
+  client: string;
+  professional: string;
+  information: string;
   StartTime: Date;
   EndTime: Date;
-  IsBlock: boolean;
-  ID: string;
+  status: string;
+  complete: boolean;
+  date: Date;
 }
 
+export interface RehabilitatorAppointment {}
+
 export interface Healthcare {
-  _id: ObjectId | string;
+  _id: ObjectId;
   information: string;
   diagnosis: string;
   client: string;

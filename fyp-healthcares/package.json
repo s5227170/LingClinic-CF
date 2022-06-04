@@ -2,9 +2,14 @@
   "name": "final-year-project-cf",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "ts-built/index.js",
   "scripts": {
-    "start": "npx functions-framework --target=healthcares"
+    "gcp-build": "npm run build",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "npm run build && npx @google-cloud/functions-framework --target=healthcares --port=3008",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "gcloud functions deploy healthcares-test --entry-point healthcares --allow-unauthenticated --trigger-http --runtime nodejs16 --project final-year-project-82049 --region europe-west2"
   },
   "author": "",
   "license": "ISC",

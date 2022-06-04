@@ -17,7 +17,9 @@ authentication.get(
       return next(client.error);
     }
 
-    const user = (await client.connect("FYP", "Users")).findOne({
+    const user = await (
+      await client.connect("FYP", "Users")
+    ).findOne({
       _id: res.locals.uid,
     });
 
@@ -29,7 +31,6 @@ authentication.get(
 authentication.post(
   "/createuser",
   async (req: Request, res: Response, next: NextFunction) => {
-    //Do checks here
     const errors: string[] = [];
 
     if (validator.isEmpty(req.body.uid)) {
@@ -82,8 +83,6 @@ authentication.post(
     ).findOne({ _id: createdUser.insertedId });
 
     res.status(200).send(user);
-    return next();
-
     return next();
   }
 );

@@ -7,9 +7,9 @@
     "gcp-build": "npm run build",
     "build": "tsc",
     "watch": "tsc --watch",
-    "start": "npm run build && npx @google-cloud/functions-framework --target=users",
+    "start": "npm run build && npx @google-cloud/functions-framework --target=users --port=3006",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "gcloud functions deploy test --entry-point fyp-authentication-test --allow-unauthenticated --trigger-http --runtime nodejs16 --project final-year-project-82049 --region europe-west2"
+    "deploy": "gcloud functions deploy fyp-users-test --entry-point users --allow-unauthenticated --trigger-http --runtime nodejs16 --project final-year-project-82049 --region europe-west2"
   },
   "author": "",
   "license": "ISC",

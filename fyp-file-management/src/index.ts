@@ -3,6 +3,7 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import CustomError from "./models/CustomError";
 import decodeToken from "./middleware/decoder";
 import appointmentRoutes from "./routes/index";
+import fileRoutes from "./routes/index";
 
 const fileMiddleware = require("express-multipart-file-parser");
 
@@ -28,7 +29,7 @@ app.use(fileMiddleware);
 
 app.use(decodeToken);
 
-app.use("/", appointmentRoutes);
+app.use("/", fileRoutes);
 
 app.use(
   (error: CustomError, req: Request, res: Response, next: NextFunction) => {
@@ -37,10 +38,9 @@ app.use(
       message: error.message,
       data: error.data,
     });
-    return next();
   }
 );
 
-app.listen(3004);
+app.listen(3002);
 
-export const appointments = app;
+export const files = app;
