@@ -3,6 +3,7 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import CustomError from "./models/CustomError";
 import decodeToken from "./middleware/decoder";
 import authentication from "./routes/index";
+import dbConnection from "./middleware/db";
 
 const fileMiddleware = require("express-multipart-file-parser");
 
@@ -28,7 +29,19 @@ app.use(fileMiddleware);
 
 app.use(decodeToken);
 
+//This is done in order open a single connection and not close it throughout the lifecycle of the server instance. This i done since
+//when locally working on the server, after a short period of time, MongoDB throws an alert that 500 connections have been reached.
+app.use(dbConnection);
+
 app.use("/", authentication);
+
+//This middleware closes each connection due to the reason stated on top.
+app.use(async (req: Request, res: Response, next: NextFunction) => {
+  if (req.db) {
+    await req.db.close();
+  }
+  return next();
+});
 
 app.use(
   (error: CustomError, req: Request, res: Response, next: NextFunction) => {

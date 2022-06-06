@@ -10,8 +10,7 @@ const authentication = Router();
 authentication.get(
   "/getuser",
   async (req: Request, res: Response, next: NextFunction) => {
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -65,8 +64,7 @@ authentication.post(
       type: "Client",
     };
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);

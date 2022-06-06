@@ -38,10 +38,10 @@ appointmentRoutes.post(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
+      await client.close();
       return next(client.error);
     }
 
@@ -59,12 +59,14 @@ appointmentRoutes.post(
         "Professional doesn't match with any in the database"
       );
       error.status = 422;
+      await client.close();
       return next(error);
     }
 
     if (professional.type !== "Therapist") {
       const error = new CustomError("The chosen user is not a therapist.");
       error.status = 422;
+      await client.close();
       return next(error);
     }
 
@@ -75,6 +77,7 @@ appointmentRoutes.post(
     if (!user) {
       const error = new CustomError("Problem findings account's user");
       error.status = 404;
+      await client.close();
       return next(error);
     }
     const clientUserName = user.forename + " " + user.surname;
@@ -96,6 +99,7 @@ appointmentRoutes.post(
             "You already have a booked appointment with a therapist. Please attend the current appointment before booking another."
           );
           error.status = 422;
+          await client.close();
           return next(error);
         }
       }
@@ -116,6 +120,7 @@ appointmentRoutes.post(
         "The chosen date and time is already taken, please refresh the page to update available slots or choose another date."
       );
       error.status = 422;
+      await client.close();
       return next(error);
     }
 
@@ -128,6 +133,7 @@ appointmentRoutes.post(
         "A professional cannot book an appointment for themselves."
       );
       error.status = 422;
+      await client.close();
       return next(error);
     }
 
@@ -148,6 +154,7 @@ appointmentRoutes.post(
     ).insertOne({ ...appointment, _id: appointment._id as ObjectId });
 
     res.status(200).send(bookedAppointment);
+    await client.close();
     return next();
   }
 );
@@ -192,8 +199,7 @@ appointmentRoutes.post(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -322,8 +328,7 @@ appointmentRoutes.get(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -361,8 +366,7 @@ appointmentRoutes.delete(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -426,8 +430,7 @@ appointmentRoutes.post(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -478,8 +481,7 @@ appointmentRoutes.post(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -525,8 +527,7 @@ appointmentRoutes.post(
 appointmentRoutes.get(
   "/getappointments",
   async (req: Request, res: Response, next: NextFunction) => {
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -578,8 +579,7 @@ appointmentRoutes.get(
 appointmentRoutes.get(
   "/getpersonalactivity",
   async (req: Request, res: Response, next: NextFunction) => {
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);

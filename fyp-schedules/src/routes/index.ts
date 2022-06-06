@@ -24,8 +24,7 @@ scheduleRoutes.get(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -88,8 +87,7 @@ scheduleRoutes.get(
       return next();
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -137,8 +135,7 @@ scheduleRoutes.get(
 scheduleRoutes.get(
   "/getpersonalscheduletherapist",
   async (req: Request, res: Response, next: NextFunction) => {
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -194,8 +191,7 @@ scheduleRoutes.get(
 scheduleRoutes.get(
   "/getpersonalschedulerehabilitator",
   async (req: Request, res: Response, next: NextFunction) => {
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);

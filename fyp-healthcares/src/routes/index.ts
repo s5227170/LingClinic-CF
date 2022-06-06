@@ -37,8 +37,7 @@ healthcareRoutes.post(
       return next();
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -124,8 +123,7 @@ healthcareRoutes.get(
 
     healthcareID = req.query.healthcareID;
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -147,8 +145,6 @@ healthcareRoutes.get(
       _id: new ObjectId(healthcare.appointmentTherapist),
     });
 
-    console.log(healthcareAppointment);
-
     if (!healthcareAppointment) {
       const error = new CustomError("Healthcare not found");
       error.status = 404;
@@ -166,8 +162,7 @@ healthcareRoutes.get(
 healthcareRoutes.get(
   "/listhealthcares",
   async (req: Request, res: Response, next: NextFunction) => {
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -223,8 +218,7 @@ healthcareRoutes.post(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -329,8 +323,7 @@ healthcareRoutes.post(
       }
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -375,7 +368,7 @@ healthcareRoutes.post(
     }
 
     for (let i = 0; i < permissionCheck.requirements.length; i++) {
-      newReqs.push(req.body.requirements[i]);
+      newReqs.push(permissionCheck.requirements[i]);
     }
 
     if (req.body.mode == "requirements") {
@@ -431,8 +424,7 @@ healthcareRoutes.post(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -491,8 +483,7 @@ healthcareRoutes.post(
       return next(error);
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);

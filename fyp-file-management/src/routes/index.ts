@@ -23,8 +23,7 @@ fileRoutes.post(
     const { fieldname, originalname, encoding, mimetype, buffer } =
       req.files[0];
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -110,8 +109,7 @@ fileRoutes.post(
       }
     }
 
-    const client = new MongoConnection();
-    await client.init();
+    const client = req.db;
 
     if (client.error) {
       return next(client.error);
@@ -193,8 +191,8 @@ fileRoutes.get("/downloadFile", async (req, res, next) => {
     error.status = 400;
     return next(error);
   }
-  const client = new MongoConnection();
-  await client.init();
+
+  const client = req.db;
 
   if (client.error) {
     return next(client.error);

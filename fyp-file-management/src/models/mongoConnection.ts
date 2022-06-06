@@ -23,4 +23,8 @@ export default class MongoConnection {
     const connection = this.client.db(db).collection(collection);
     return connection;
   }
+
+  async close() {
+    this.client.close();
+  }
 }
