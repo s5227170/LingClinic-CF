@@ -85,4 +85,58 @@ authentication.post(
   }
 );
 
+authentication.post(
+  "/updateuser",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const client = req.db;
+
+    if (client.error) {
+      return next(client.error);
+    }
+
+    const user = await (
+      await client.connect("FYP", "Users")
+    ).findOne({
+      _id: res.locals.uid,
+    });
+
+    if (!user) {
+      const error = new CustomError("User not found.");
+      error.status = 404;
+      return next(error);
+    }
+
+    //Entries stands for the reformatted object into an array of arrays
+    //that consist of [key:value] pair elements.
+    const currentUserEntries: User = { ...(user as User) };
+    const newUserEntries = Object.entries(req.body.user);
+
+    const valueUpdate = Object.entries(currentUserEntries).map(
+      (property, index) => {
+        if (property[1] !== newUserEntries[index][1]) {
+          if (property[0] == "email" || property[0] == "type") {
+            const error = new CustomError(
+              "You do not have access to change one or more of the applied properties."
+            );
+            error.status = 401;
+            return next(error);
+          }
+          return [property[0], newUserEntries[index][1]];
+        }
+        return property;
+      }
+    );
+
+    const refinedUser = Object.fromEntries(valueUpdate as any);
+
+    console.log(refinedUser);
+    const updatedUser = await (
+      await client.connect("FYP", "Users")
+    ).updateOne({ _id: res.locals.uid }, { $set: { ...refinedUser } });
+
+    res.status(200).send(updatedUser);
+    return next();
+  }
+);
+
 export default authentication;
